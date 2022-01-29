@@ -1,21 +1,40 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQxNDQ0MCwiZXhwIjoxOTU4OTkwNDQwfQ.X6O5Zd7Ner-Q8t9BpQ1Sziiiad5PWoFccMrTNJwGTy8";
+const SUPABASE_URL = "https://psxrukisihgyjxwvfykl.supabase.co";
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
     const [mensagem, setMensagem] = useState('');
     const [listaMensagens, setListaMensagens] = useState([]);
 
+    useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                setListaMensagens(data);
+            });
+    }, []);
+
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaMensagens.length + 1,
             de: 'vanessametonini',
             texto: novaMensagem
         }
-        setListaMensagens([
-            mensagem,
-            ...listaMensagens
-        ]);
+
+        supabaseClient.from('mensagens').insert([ mensagem ]).then(({ data }) => {
+            setListaMensagens([
+                data[0],
+                ...listaMensagens
+            ]);
+        })
+
+        
         setMensagem('');
     }
     
@@ -24,7 +43,8 @@ export default function ChatPage() {
             styleSheet={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: appConfig.theme.colors.primary[500],
-                backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
+                // backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
+                backgroundImage: `linear-gradient(${appConfig.theme.colors.primary['500']}, ${appConfig.theme.colors.primary['050']})`,
                 backgroundRepeat: 'no-repeat', backgroundSize: 'cover', backgroundBlendMode: 'multiply',
                 color: appConfig.theme.colors.neutrals['000']
             }}
@@ -115,7 +135,6 @@ function Header() {
 }
 
 function MessageList(props) {
-    console.log('MessageList', props);
     return (
         <Box
             tag="ul"
@@ -157,7 +176,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
